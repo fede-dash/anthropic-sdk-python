@@ -107,6 +107,10 @@ class Stream(Generic[_T], metaclass=_SyncStreamMeta):
 
             yield process_data(data=data, cast_to=cast_to, response=response)
 
+        # Ensure the entire stream is consumed
+        for _sse in iterator:
+            pass
+
     def __enter__(self) -> Self:
         return self
 
@@ -213,6 +217,10 @@ class AsyncStream(Generic[_T], metaclass=_AsyncStreamMeta):
                 data["type"] = sse.event
 
             yield process_data(data=data, cast_to=cast_to, response=response)
+
+        # Ensure the entire stream is consumed
+        async for _sse in iterator:
+            pass
 
     async def __aenter__(self) -> Self:
         return self
