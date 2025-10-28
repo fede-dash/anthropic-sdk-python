@@ -120,10 +120,9 @@ class Stream(Generic[_T], metaclass=_SyncStreamMeta):
                     response=self.response,
                 )
 
-        # Explicitly closes decoder resources if available
+        # Explicitly close the response to release the connection
         # Immediately releases connection instead of consuming remaining stream
-        if hasattr(self._decoder, "close"):
-            self._decoder.close()  # Properly closes decoder resources without unnecessary iteration
+        self.response.close()
 
     def __enter__(self) -> Self:
         return self
@@ -206,7 +205,7 @@ class AsyncStream(Generic[_T], metaclass=_AsyncStreamMeta):
         async for sse in iterator:
             if sse.event == "completion":
                 yield process_data(data=sse.json(), cast_to=cast_to, response=response)
-            # same O(1) lookup for consistency between sync/async versions
+            # Single, fast membership test instead of multiple string comparisons
             if sse.event in MESSAGE_EVENTS:
                 data = sse.json()
                 if is_dict(data) and "type" not in data:
@@ -232,9 +231,9 @@ class AsyncStream(Generic[_T], metaclass=_AsyncStreamMeta):
                     response=self.response,
                 )
 
+        # Explicitly close the response to release the connection
         # Immediately releases connection instead of consuming remaining stream
-        if hasattr(self._decoder, "close"):
-            self._decoder.close()  # Properly closes decoder resources without unnecessary iteration
+        await self.response.aclose()
 
     async def __aenter__(self) -> Self:
         return self
